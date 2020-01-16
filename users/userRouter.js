@@ -5,9 +5,11 @@ const router = express.Router();
 
 const User = require('./userDb.js');
 
+const Post = require('../posts/postDb');
+
 router.post('/', validateUser, (req, res) => {
   // do your magic!
-  console.log(req.body)
+  // console.log(req.body)
   User.insert(req.body)
   
     .then(user => {
@@ -20,8 +22,16 @@ router.post('/', validateUser, (req, res) => {
 
 });
 
-router.post('/:id/posts', (req, res) => {
+router.post('/:id/posts', validatePost, (req, res) => {
   // do your magic!
+  Post.insert(req.body)
+    .then(user => {
+      res.status(201).json(user)
+    })
+    .catch(error => {
+      console.log(error)
+      res.status(500).json({ message: "Error adding the post"})
+    })
 });
 
 router.get('/', (req, res) => {
@@ -55,6 +65,13 @@ router.get('/:id', validateUserId, (req, res) => {
 
 router.get('/:id/posts', (req, res) => {
   // do your magic!
+  User.getUserPosts(req.params.id)
+    .then(user => {
+      res.status(200).json(user)
+    })
+    .catch(error => {
+      res.status(500).json({ message: "Error retrieving the user's post"})
+    })
 });
 
 router.delete('/:id', validateUserId, (req, res) => {
@@ -99,9 +116,9 @@ function validateUserId(req, res, next) {
 function validateUser(req, res, next) {
   // do your magic!
   console.log(req.body);
-  if(req.body != req.body){
-    res.status(400).json({message: "missing user data"})
-  }else if(req.body.name === '') {
+  if(!req.body || Object.keys(req.body).length === 0 ){
+    res.status(400).json({ message: "missing user data" })
+  }else if(!req.body.name) {
     res.status(404).json({ message: "missing required name field"})
   }
   next();
@@ -109,6 +126,13 @@ function validateUser(req, res, next) {
 
 function validatePost(req, res, next) {
   // do your magic!
+  console.log(req.body)
+  if(!req.body || Object.keys(req.body).length === 0) {
+    res.status(400).json({ message: "missing post data"})
+  }else if(!req.body.text && !req.body.user_id) {
+    res.status(404).json({ message: "missing required text field"})
+  }
+  next();
 }
 
 module.exports = router;
